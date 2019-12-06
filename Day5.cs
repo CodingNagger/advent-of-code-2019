@@ -25,9 +25,6 @@ namespace adventofcode_2019
         int[] baseValues;
         int cursor;
 
-        int noun;
-        int verb;
-
         int latestOutput = -1;
 
         public override string Compute(string[] input)
