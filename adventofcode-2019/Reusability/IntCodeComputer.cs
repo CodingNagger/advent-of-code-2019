@@ -39,9 +39,14 @@ namespace AdventOfCode2019 {
         bool sentPhaseSetting;
 
         private bool halted;
+
+        public long Noun { set { values[1] = value; } }
+        public long Verb { set { values[2] = value; } }
         public bool NotHalted => !halted;
 
         public long FirstValue => values[0];
+
+        public long? LatestOutput => latestOutput;
 
         public long? RunIntcodeProgram(long secondInput = 0)
         {
@@ -124,30 +129,30 @@ namespace AdventOfCode2019 {
         private void LessUpdate(Command command)
         {
             values[command.OutputIndex] = command.Input1 < command.Input2 ? 1 : 0;
-            Console.WriteLine($"Wrote {values[command.OutputIndex]} to {command.OutputIndex}");
+            // Console.WriteLine($"Wrote {values[command.OutputIndex]} to {command.OutputIndex}");
         }
 
         private void EqualsUpdate(Command command)
         {
             values[command.OutputIndex] = command.Input1 == command.Input2 ? 1 : 0;
-            Console.WriteLine($"Wrote {values[command.OutputIndex]} to {command.OutputIndex}");
+            // Console.WriteLine($"Wrote {values[command.OutputIndex]} to {command.OutputIndex}");
         }
         private void AddUpdate(Command command)
         {
             values[command.OutputIndex] = command.Input1 + command.Input2;
-            Console.WriteLine($"Wrote {command.Input1} + {command.Input2} = {values[command.OutputIndex]} to {command.OutputIndex}");
+            // Console.WriteLine($"Wrote {command.Input1} + {command.Input2} = {values[command.OutputIndex]} to {command.OutputIndex}");
         }
 
         private void MultiplyUpdate(Command command)
         {
             values[command.OutputIndex] = command.Input1 * command.Input2;
-            Console.WriteLine($"Wrote {command.Input1} * {command.Input2} = {values[command.OutputIndex]} to {command.OutputIndex}");
+            // Console.WriteLine($"Wrote {command.Input1} * {command.Input2} = {values[command.OutputIndex]} to {command.OutputIndex}");
         }
 
         private void StoreUpdate(Command command)
         {
             values[command.OutputIndex] = command.Input1;
-            Console.WriteLine($"Wrote {values[command.OutputIndex]} to {command.OutputIndex}");
+            // Console.WriteLine($"Wrote {values[command.OutputIndex]} to {command.OutputIndex}");
         }
 
         private void OutputParameter(Command command)
