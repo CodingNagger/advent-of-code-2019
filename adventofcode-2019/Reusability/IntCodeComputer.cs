@@ -1,7 +1,7 @@
 using System;
 
 namespace AdventOfCode2019 {
-    class IntCodeComputer
+    public class IntCodeComputer
     {
         public IntCodeComputer(int phaseSetting, long[] baseValues)
         {
@@ -11,6 +11,10 @@ namespace AdventOfCode2019 {
             cursor = 0;
             sentPhaseSetting = false;
             halted = false;
+        }
+        
+        public IntCodeComputer(long[] baseValues):this(0, baseValues)
+        {
         }
 
         long? latestOutput = null;
@@ -39,7 +43,7 @@ namespace AdventOfCode2019 {
 
         public long FirstValue => values[0];
 
-        public long? RunIntcodeProgram(long secondInput)
+        public long? RunIntcodeProgram(long secondInput = 0)
         {
             this.secondInput = secondInput;
 
