@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace AdventOfCode2019
 {
-    class Day2 : Day
+    public class Day2 : Day
     {
         const int ADD = 1;
         const int MULTIPLY = 2;
