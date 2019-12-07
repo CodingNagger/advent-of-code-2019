@@ -7,48 +7,22 @@ namespace AdventOfCode2019
 {
     public class Day7 : Day
     {
-        long[] baseValues;
+        long[] program;
 
         long maxOutput = 0;
 
         public override string Compute(string[] input)
         {
-            baseValues = ParseInput(input);
+            program = IntCodeProgramParser.Parse(input);
 
             int[] phaseSettings = new int[] { 5, 6, 7, 8, 9 };
 
-
             foreach (var permuation in phaseSettings.Permutations())
             {
-                Console.WriteLine("New permutation");
-                var a = new IntCodeComputer(permuation[0], baseValues);
-                var b = new IntCodeComputer(permuation[1], baseValues);
-                var c = new IntCodeComputer(permuation[2], baseValues);
-                var d = new IntCodeComputer(permuation[3], baseValues);
-                var e = new IntCodeComputer(permuation[4], baseValues);
-
-                long? outputE = 0;
-
-                while (e.NotHalted) {
-                    var outputA = a.RunIntcodeProgram(outputE.HasValue ? outputE.Value : 0 ) ?? 0;
-                    var outputB = b.RunIntcodeProgram(outputA) ?? 0;
-                    var outputC = c.RunIntcodeProgram(outputB) ?? 0;
-                    var outputD = d.RunIntcodeProgram(outputC) ?? 0;
-                    outputE = e.RunIntcodeProgram(outputD);
-                }
-
-                if (outputE.HasValue) {
-                    maxOutput = Math.Max(maxOutput, outputE.Value);
-                }
-               
+                maxOutput = Math.Max(maxOutput, new IntCodeAmplifier(permuation, program).Run());
             }
 
             return $"{maxOutput}";
-        }
-
-        private long[] ParseInput(string[] input)
-        {
-            return input[0].Split(',').Select(s => long.Parse(s.Trim())).ToArray();
         }
     }
 

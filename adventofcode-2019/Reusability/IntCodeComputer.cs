@@ -1,6 +1,7 @@
 using System;
 
-namespace AdventOfCode2019 {
+namespace AdventOfCode2019
+{
     public class IntCodeComputer
     {
         public IntCodeComputer(int phaseSetting, long[] baseValues)
@@ -12,8 +13,8 @@ namespace AdventOfCode2019 {
             sentPhaseSetting = false;
             halted = false;
         }
-        
-        public IntCodeComputer(long[] baseValues):this(0, baseValues)
+
+        public IntCodeComputer(long[] baseValues) : this(0, baseValues)
         {
         }
 
@@ -54,168 +55,104 @@ namespace AdventOfCode2019 {
 
             while (ShouldContinue())
             {
-                // Console.WriteLine($"Index {cursor} - {values[cursor]}");
-                Command command = CreateCommand();
-                // Console.WriteLine($"Opcode: {command.Opcode}");
+                long opcode = values[cursor] % 100;
 
-                if (command.Opcode == ADD)
-                {
-                    AddUpdate(command);
-                }
-                else if (command.Opcode == MULTIPLY)
-                {
-                    MultiplyUpdate(command);
-                }
-                else if (command.Opcode == STORE)
-                {
-                    StoreUpdate(command);
-                }
-                else if (command.Opcode == OUTPUT)
-                {
-                    OutputParameter(command);
-                }
-                else if (command.Opcode == TRUEJUMP)
-                {
-                    JumpIfTrue(command);
-                }
-                else if (command.Opcode == FALSEJUMP)
-                {
-                    JumpIfFalse(command);
-                }
-                else if (command.Opcode == LESS)
-                {
-                    LessUpdate(command);
-                }
-                else if (command.Opcode == EQUALS)
-                {
-                    EqualsUpdate(command);
-                }
+                long input1 = -1, input2 = -1;
+                long output = -1;
+                long param1Mode = (values[cursor] / 100) % 10;
+                long param2Mode = (values[cursor] / 1000) % 10;
+                long param3Mode = (values[cursor] / 10000) % 10;
 
-                StepForward(command);
-
-                if (command.Opcode == OUTPUT)
+                if (opcode == ADD)
                 {
+                    input1 = ValueFor(1, param1Mode);
+                    input2 = ValueFor(2, param2Mode);
+                    output = ValueFor(3, MODE_IMMEDIATE);
+                    values[output] = input1 + input2;
+                    // Console.WriteLine($"Wrote {input1} + {input2} = {values[output]} to {output}");
+                    cursor += 4;
+                }
+                else if (opcode == MULTIPLY)
+                {
+                    input1 = ValueFor(1, param1Mode);
+                    input2 = ValueFor(2, param2Mode);
+                    output = ValueFor(3, MODE_IMMEDIATE);
+                    values[output] = input1 * input2;
+                    // Console.WriteLine($"Wrote {input1} * {input2} = {values[output]} to {output}");
+                    cursor += 4;
+                }
+                else if (opcode == STORE)
+                {
+                    input1 = GetDirtyInput();
+                    output = ValueFor(1, MODE_IMMEDIATE);
+                    values[output] = input1;
+                    // Console.WriteLine($"Wrote {values[output]} to {output}");
+                    cursor += 2;
+                }
+                else if (opcode == OUTPUT)
+                {
+                    input1 = ValueFor(1, param1Mode);
+                    Console.WriteLine(input1);
+                    latestOutput = input1;
+                    cursor += 2;
                     return latestOutput;
+                }
+                else if (opcode == TRUEJUMP)
+                {
+                    input1 = ValueFor(1, param1Mode);
+                    input2 = ValueFor(2, param2Mode);
+
+                    if (input1 != 0)
+                    {
+                        cursor = input2;
+                    }
+                    else
+                    {
+                        cursor += 3;
+                    }
+                }
+                else if (opcode == FALSEJUMP)
+                {
+                    input1 = ValueFor(1, param1Mode);
+                    input2 = ValueFor(2, param2Mode);
+
+                    if (input1 == 0)
+                    {
+                        cursor = input2;
+                    }
+                    else
+                    {
+                        cursor += 3;
+                    }
+                }
+                else if (opcode == LESS)
+                {
+                    input1 = ValueFor(1, param1Mode);
+                    input2 = ValueFor(2, param2Mode);
+                    output = ValueFor(3, MODE_IMMEDIATE);
+                    values[output] = input1 < input2 ? 1 : 0;
+                    // Console.WriteLine($"Wrote {values[output]} to {output}");
+                    cursor += 4;
+                }
+                else if (opcode == EQUALS)
+                {
+                    input1 = ValueFor(1, param1Mode);
+                    input2 = ValueFor(2, param2Mode);
+                    output = ValueFor(3, MODE_IMMEDIATE);
+                    
+                    values[output] = input1 == input2 ? 1 : 0;
+                    // Console.WriteLine($"Wrote {values[output]} to {output}");
+                    cursor += 4;
                 }
             }
 
             return latestOutput;
         }
 
-        private void JumpIfTrue(Command command)
-        {
-            if (command.Input1 != 0)
-            {
-                cursor = command.Input2;
-            }
-            else
-            {
-                cursor += 3;
-            }
-        }
-
-        private void JumpIfFalse(Command command)
-        {
-            if (command.Input1 == 0)
-            {
-                cursor = command.Input2;
-            }
-            else
-            {
-                cursor += 3;
-            }
-        }
-
-        private void LessUpdate(Command command)
-        {
-            values[command.OutputIndex] = command.Input1 < command.Input2 ? 1 : 0;
-            // Console.WriteLine($"Wrote {values[command.OutputIndex]} to {command.OutputIndex}");
-        }
-
-        private void EqualsUpdate(Command command)
-        {
-            values[command.OutputIndex] = command.Input1 == command.Input2 ? 1 : 0;
-            // Console.WriteLine($"Wrote {values[command.OutputIndex]} to {command.OutputIndex}");
-        }
-        private void AddUpdate(Command command)
-        {
-            values[command.OutputIndex] = command.Input1 + command.Input2;
-            // Console.WriteLine($"Wrote {command.Input1} + {command.Input2} = {values[command.OutputIndex]} to {command.OutputIndex}");
-        }
-
-        private void MultiplyUpdate(Command command)
-        {
-            values[command.OutputIndex] = command.Input1 * command.Input2;
-            // Console.WriteLine($"Wrote {command.Input1} * {command.Input2} = {values[command.OutputIndex]} to {command.OutputIndex}");
-        }
-
-        private void StoreUpdate(Command command)
-        {
-            values[command.OutputIndex] = command.Input1;
-            // Console.WriteLine($"Wrote {values[command.OutputIndex]} to {command.OutputIndex}");
-        }
-
-        private void OutputParameter(Command command)
-        {
-            Console.WriteLine(command.Input1);
-            latestOutput = command.Input1;
-        }
-
-        private void StepForward(Command command)
-        {
-            // Console.WriteLine($"move to {cursor + command.NextCommandDiff} - +{command.NextCommandDiff}");
-            cursor += command.NextCommandDiff;
-        }
-
         private bool ShouldContinue()
         {
             halted = values[cursor] == HALT;
             return NotHalted;
-        }
-
-        private Command CreateCommand()
-        {
-            long opcode = values[cursor] % 100;
-
-            long input1 = -1, input2 = -1;
-            long nextCommandDiff = -1, output = -1;
-            long param1Mode = (values[cursor] / 100) % 10;
-            long param2Mode = (values[cursor] / 1000) % 10;
-            long param3Mode = (values[cursor] / 10000) % 10;
-
-            if (opcode == ADD || opcode == MULTIPLY)
-            {
-                nextCommandDiff = 4;
-                input1 = ValueFor(1, param1Mode);
-                input2 = ValueFor(2, param2Mode);
-                output = ValueFor(3, MODE_IMMEDIATE);
-            }
-            else if (opcode == STORE)
-            {
-                nextCommandDiff = 2;
-                input1 = GetDirtyInput();
-                output = ValueFor(1, MODE_IMMEDIATE);
-            }
-            else if (opcode == OUTPUT)
-            {
-                nextCommandDiff = 2;
-                input1 = ValueFor(1, param1Mode);
-            }
-            else if (opcode == TRUEJUMP || opcode == FALSEJUMP)
-            {
-                input1 = ValueFor(1, param1Mode);
-                input2 = ValueFor(2, param2Mode);
-                nextCommandDiff = 0;
-            }
-            else if (opcode == LESS || opcode == EQUALS)
-            {
-                input1 = ValueFor(1, param1Mode);
-                input2 = ValueFor(2, param2Mode);
-                output = ValueFor(3, MODE_IMMEDIATE);
-                nextCommandDiff = 4;
-            }
-
-            return new Command { Opcode = opcode, Input1 = input1, Input2 = input2, OutputIndex = output, NextCommandDiff = nextCommandDiff };
         }
 
         long GetDirtyInput()
@@ -241,15 +178,6 @@ namespace AdventOfCode2019 {
             }
 
             throw new ArgumentException($"Why you do this? Mode: {mode}");
-        }
-
-        struct Command
-        {
-            public long Opcode;
-            public long Input1;
-            public long Input2;
-            public long OutputIndex;
-            public long NextCommandDiff;
         }
     }
 }
