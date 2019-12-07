@@ -1,4 +1,4 @@
-namespace adventofcode_2019
+namespace AdventOfCode2019
 {
     class Day1 : Day
     {

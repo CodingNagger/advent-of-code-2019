@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 
-namespace adventofcode_2019
+namespace AdventOfCode2019
 {
     class Day4 : Day
     {

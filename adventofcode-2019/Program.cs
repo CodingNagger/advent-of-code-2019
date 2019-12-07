@@ -2,7 +2,7 @@
 using System.IO;
 using System.Diagnostics;
 
-namespace adventofcode_2019
+namespace AdventOfCode2019
 {
     class Program
     {

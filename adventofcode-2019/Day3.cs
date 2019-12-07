@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace adventofcode_2019
+namespace AdventOfCode2019
 {
     class Day3 : Day
     {
