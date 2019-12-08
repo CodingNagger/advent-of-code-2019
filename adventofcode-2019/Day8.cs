@@ -10,7 +10,7 @@ namespace AdventOfCode2019
         {
             var width = 25;
             var height = 6;
-            var image = new DSNDecoder().Decode(input, 25, 6);
+            var image = new DSNDecoder().Decode(input, width, height);
             StringBuilder builder = new StringBuilder();
 
             for (var j = 0; j < height; j++)
