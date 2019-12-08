@@ -24,23 +24,10 @@ namespace AdventOfCode2019
         long? latestOutput;
         long[] values;
         long cursor;
-        const int ADD = 1;
-        const int MULTIPLY = 2;
-        const int STORE = 3;
-        const int OUTPUT = 4;
-        const int TRUEJUMP = 5;
-        const int FALSEJUMP = 6;
-        const int LESS = 7;
-        const int EQUALS = 8;
-
-        const int HALT = 99;
-
-        const int MODE_POSITION = 0;
-        const int MODE_IMMEDIATE = 1;
 
         public long Noun { set { values[1] = value; } }
         public long Verb { set { values[2] = value; } }
-        public bool ShouldContinue => values[cursor] != HALT;
+        public bool ShouldContinue => (OperationType) values[cursor] != OperationType.Halt;
 
         public long FirstValue => values[0];
 
@@ -52,48 +39,48 @@ namespace AdventOfCode2019
 
             while (ShouldContinue)
             {
-                long opcode = values[cursor] % 100;
-                long param1Mode = (values[cursor] / 100) % 10;
-                long param2Mode = (values[cursor] / 1000) % 10;
-                long param3Mode = (values[cursor] / 10000) % 10;
+                var operationType = (OperationType) (values[cursor] % 100);
+                var param1Mode = (ValueMode) ((values[cursor] / 100) % 10);
+                var param2Mode = (ValueMode) ((values[cursor] / 1000) % 10);
+                var param3Mode = (ValueMode) ((values[cursor] / 10000) % 10);
 
-                if (opcode == ADD)
+                if (operationType == OperationType.Add)
                 {
-                    values[ValueFor(3, MODE_IMMEDIATE)] = ValueFor(1, param1Mode) + ValueFor(2, param2Mode);
+                    values[ValueFor(3, ValueMode.Immediate)] = ValueFor(1, param1Mode) + ValueFor(2, param2Mode);
                     cursor += 4;
                 }
-                else if (opcode == MULTIPLY)
+                else if (operationType ==  OperationType.Multiply)
                 {
-                    values[ValueFor(3, MODE_IMMEDIATE)] = ValueFor(1, param1Mode) * ValueFor(2, param2Mode);
+                    values[ValueFor(3, ValueMode.Immediate)] = ValueFor(1, param1Mode) * ValueFor(2, param2Mode);
                     cursor += 4;
                 }
-                else if (opcode == STORE)
+                else if (operationType == OperationType.Store)
                 {
-                    values[ValueFor(1, MODE_IMMEDIATE)] =  GetDirtyInput();
+                    values[ValueFor(1, ValueMode.Immediate)] =  GetDirtyInput();
                     cursor += 2;
                 }
-                else if (opcode == OUTPUT)
+                else if (operationType == OperationType.Output)
                 {
                     latestOutput = ValueFor(1, param1Mode);
                     cursor += 2;
                     return latestOutput;
                 }
-                else if (opcode == TRUEJUMP)
+                else if (operationType == OperationType.JumpIfTrue)
                 {
                     cursor = ValueFor(1, param1Mode) != 0 ? ValueFor(2, param2Mode) : (cursor + 3);
                 }
-                else if (opcode == FALSEJUMP)
+                else if (operationType == OperationType.JumpIfFalse)
                 {
                     cursor = ValueFor(1, param1Mode) == 0 ? ValueFor(2, param2Mode) : (cursor + 3);
                 }
-                else if (opcode == LESS)
+                else if (operationType == OperationType.Less)
                 {
-                    values[ValueFor(3, MODE_IMMEDIATE)] = ValueFor(1, param1Mode) < ValueFor(2, param2Mode) ? 1 : 0;
+                    values[ValueFor(3, ValueMode.Immediate)] = ValueFor(1, param1Mode) < ValueFor(2, param2Mode) ? 1 : 0;
                     cursor += 4;
                 }
-                else if (opcode == EQUALS)
+                else if (operationType == OperationType.Equals)
                 {
-                    values[ValueFor(3, MODE_IMMEDIATE)] = ValueFor(1, param1Mode) == ValueFor(2, param2Mode) ? 1 : 0;
+                    values[ValueFor(3, ValueMode.Immediate)] = ValueFor(1, param1Mode) == ValueFor(2, param2Mode) ? 1 : 0;
                     cursor += 4;
                 }
             }
@@ -106,18 +93,35 @@ namespace AdventOfCode2019
             return inputs.Dequeue();
         }
 
-        long ValueFor(int relativePos, long mode)
+        long ValueFor(int relativePos, ValueMode mode)
         {
-            if (mode == MODE_POSITION)
+            if (mode == ValueMode.Position)
             {
                 return values[values[cursor + relativePos]];
             }
-            else if (mode == MODE_IMMEDIATE)
+            else if (mode == ValueMode.Immediate)
             {
                 return values[cursor + relativePos];
             }
 
             throw new ArgumentException($"Why you do this? Mode: {mode}");
+        }
+
+        enum ValueMode {
+            Position = 0,
+            Immediate = 1
+        }
+
+        enum OperationType {
+            Add = 1,
+            Multiply = 2,
+            Store = 3,
+            Output = 4,
+            JumpIfTrue = 5,
+            JumpIfFalse = 6,
+            Less = 7,
+            Equals = 8,
+            Halt = 99
         }
     }
 }
