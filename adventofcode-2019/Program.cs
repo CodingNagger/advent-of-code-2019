@@ -11,8 +11,8 @@ namespace AdventOfCode2019
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            Day day = new Day7();
-            var input = File.ReadAllLines("./input/day7.txt");
+            Day day = new Day8();
+            var input = File.ReadAllLines("./input/day8.txt");
             Console.WriteLine(day.Compute(input));
 
             stopWatch.Stop();
