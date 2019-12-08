@@ -17,7 +17,7 @@ namespace AdventOfCode2019
         {
             long? output = 0;
 
-            while (computers.Last().NotHalted)
+            while (computers.Last().ShouldContinue)
             {
                 for (var i = 0; i < computers.Length; i++)
                 {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace AdventOfCode2019
 {
@@ -6,19 +7,21 @@ namespace AdventOfCode2019
     {
         public IntCodeComputer(int phaseSetting, long[] baseValues)
         {
-            this.phaseSetting = phaseSetting;
             this.values = new long[baseValues.Length];
             baseValues.CopyTo(this.values, 0);
             cursor = 0;
-            sentPhaseSetting = false;
-            halted = false;
+            latestOutput = null;
+            inputs = new Queue<long>();
+            inputs.Enqueue(phaseSetting);
         }
 
         public IntCodeComputer(long[] baseValues) : this(0, baseValues)
         {
         }
 
-        long? latestOutput = null;
+        Queue<long> inputs;
+
+        long? latestOutput;
         long[] values;
         long cursor;
         const int ADD = 1;
@@ -35,113 +38,62 @@ namespace AdventOfCode2019
         const int MODE_POSITION = 0;
         const int MODE_IMMEDIATE = 1;
 
-        int phaseSetting;
-        long secondInput;
-        bool sentPhaseSetting;
-
-        private bool halted;
-
         public long Noun { set { values[1] = value; } }
         public long Verb { set { values[2] = value; } }
-        public bool NotHalted => !halted;
+        public bool ShouldContinue => values[cursor] != HALT;
 
         public long FirstValue => values[0];
 
         public long? LatestOutput => latestOutput;
 
-        public long? RunIntcodeProgram(long secondInput = 0)
+        public long? RunIntcodeProgram(long nextInput = 0)
         {
-            this.secondInput = secondInput;
+            this.inputs.Enqueue(nextInput);
 
-            while (ShouldContinue())
+            while (ShouldContinue)
             {
                 long opcode = values[cursor] % 100;
-
-                long input1 = -1, input2 = -1;
-                long output = -1;
                 long param1Mode = (values[cursor] / 100) % 10;
                 long param2Mode = (values[cursor] / 1000) % 10;
                 long param3Mode = (values[cursor] / 10000) % 10;
 
                 if (opcode == ADD)
                 {
-                    input1 = ValueFor(1, param1Mode);
-                    input2 = ValueFor(2, param2Mode);
-                    output = ValueFor(3, MODE_IMMEDIATE);
-                    values[output] = input1 + input2;
-                    // Console.WriteLine($"Wrote {input1} + {input2} = {values[output]} to {output}");
+                    values[ValueFor(3, MODE_IMMEDIATE)] = ValueFor(1, param1Mode) + ValueFor(2, param2Mode);
                     cursor += 4;
                 }
                 else if (opcode == MULTIPLY)
                 {
-                    input1 = ValueFor(1, param1Mode);
-                    input2 = ValueFor(2, param2Mode);
-                    output = ValueFor(3, MODE_IMMEDIATE);
-                    values[output] = input1 * input2;
-                    // Console.WriteLine($"Wrote {input1} * {input2} = {values[output]} to {output}");
+                    values[ValueFor(3, MODE_IMMEDIATE)] = ValueFor(1, param1Mode) * ValueFor(2, param2Mode);
                     cursor += 4;
                 }
                 else if (opcode == STORE)
                 {
-                    input1 = GetDirtyInput();
-                    output = ValueFor(1, MODE_IMMEDIATE);
-                    values[output] = input1;
-                    // Console.WriteLine($"Wrote {values[output]} to {output}");
+                    values[ValueFor(1, MODE_IMMEDIATE)] =  GetDirtyInput();
                     cursor += 2;
                 }
                 else if (opcode == OUTPUT)
                 {
-                    input1 = ValueFor(1, param1Mode);
-                    Console.WriteLine(input1);
-                    latestOutput = input1;
+                    latestOutput = ValueFor(1, param1Mode);
                     cursor += 2;
                     return latestOutput;
                 }
                 else if (opcode == TRUEJUMP)
                 {
-                    input1 = ValueFor(1, param1Mode);
-                    input2 = ValueFor(2, param2Mode);
-
-                    if (input1 != 0)
-                    {
-                        cursor = input2;
-                    }
-                    else
-                    {
-                        cursor += 3;
-                    }
+                    cursor = ValueFor(1, param1Mode) != 0 ? ValueFor(2, param2Mode) : (cursor + 3);
                 }
                 else if (opcode == FALSEJUMP)
                 {
-                    input1 = ValueFor(1, param1Mode);
-                    input2 = ValueFor(2, param2Mode);
-
-                    if (input1 == 0)
-                    {
-                        cursor = input2;
-                    }
-                    else
-                    {
-                        cursor += 3;
-                    }
+                    cursor = ValueFor(1, param1Mode) == 0 ? ValueFor(2, param2Mode) : (cursor + 3);
                 }
                 else if (opcode == LESS)
                 {
-                    input1 = ValueFor(1, param1Mode);
-                    input2 = ValueFor(2, param2Mode);
-                    output = ValueFor(3, MODE_IMMEDIATE);
-                    values[output] = input1 < input2 ? 1 : 0;
-                    // Console.WriteLine($"Wrote {values[output]} to {output}");
+                    values[ValueFor(3, MODE_IMMEDIATE)] = ValueFor(1, param1Mode) < ValueFor(2, param2Mode) ? 1 : 0;
                     cursor += 4;
                 }
                 else if (opcode == EQUALS)
                 {
-                    input1 = ValueFor(1, param1Mode);
-                    input2 = ValueFor(2, param2Mode);
-                    output = ValueFor(3, MODE_IMMEDIATE);
-                    
-                    values[output] = input1 == input2 ? 1 : 0;
-                    // Console.WriteLine($"Wrote {values[output]} to {output}");
+                    values[ValueFor(3, MODE_IMMEDIATE)] = ValueFor(1, param1Mode) == ValueFor(2, param2Mode) ? 1 : 0;
                     cursor += 4;
                 }
             }
@@ -149,21 +101,9 @@ namespace AdventOfCode2019
             return latestOutput;
         }
 
-        private bool ShouldContinue()
-        {
-            halted = values[cursor] == HALT;
-            return NotHalted;
-        }
-
         long GetDirtyInput()
         {
-            if (sentPhaseSetting)
-            {
-                return secondInput;
-            }
-
-            sentPhaseSetting = true;
-            return phaseSetting;
+            return inputs.Dequeue();
         }
 
         long ValueFor(int relativePos, long mode)
