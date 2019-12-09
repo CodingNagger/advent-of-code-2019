@@ -67,7 +67,6 @@ namespace AdventOfCode2019
                 }
                 else if (operationType == OperationType.Store)
                 {
-                    Console.WriteLine($"Write to {IndexFor(1, param1Mode == ValueMode.Relative ? param1Mode : ValueMode.Immediate)} - relative base: {relativeBase}");
                     Write(IndexFor(1, param1Mode),  GetDirtyInput());
                     cursor += 2;
                 }
