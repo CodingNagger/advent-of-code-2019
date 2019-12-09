@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
 namespace AdventOfCode2019
@@ -7,9 +8,11 @@ namespace AdventOfCode2019
     {
         Queue<long> inputs;
 
-        long? latestOutput;
+        List<long?> outputs;
         long[] program;
         long cursor;
+        long relativeBase;
+        bool continuousOutput;
 
         public long Noun { set { program[1] = value; } }
         public long Verb { set { program[2] = value; } }
@@ -17,16 +20,24 @@ namespace AdventOfCode2019
 
         public long FirstValue => program[0];
 
-        public long? LatestOutput => latestOutput;
+        public long? LatestOutput => outputs.LastOrDefault();
 
-        public IntCodeComputer(int phaseSetting, long[] program)
+        public string StringOutput => string.Join(',', outputs.ToArray());
+
+        public IntCodeComputer(int phaseSetting, long[] program, bool continuousOutput)
         {
             this.program = new long[program.Length];
             program.CopyTo(this.program, 0);
             cursor = 0;
-            latestOutput = null;
+            outputs = new List<long?>();
             inputs = new Queue<long>();
             inputs.Enqueue(phaseSetting);
+            relativeBase = 0;
+            this.continuousOutput = continuousOutput;
+        }
+
+        public IntCodeComputer(int phaseSetting, long[] program): this(phaseSetting, program, false)
+        {
         }
 
         public IntCodeComputer(long[] baseValues) : this(0, baseValues)
@@ -46,28 +57,30 @@ namespace AdventOfCode2019
 
                 if (operationType == OperationType.Add)
                 {
-                    program[ValueFor(3, ValueMode.Immediate)] = ValueFor(1, param1Mode) + ValueFor(2, param2Mode);
+                    Write(IndexFor(3, param3Mode), ValueFor(1, param1Mode) + ValueFor(2, param2Mode));
                     cursor += 4;
                 }
                 else if (operationType ==  OperationType.Multiply)
                 {
-                    program[ValueFor(3, ValueMode.Immediate)] = ValueFor(1, param1Mode) * ValueFor(2, param2Mode);
+                    Write(IndexFor(3, param3Mode), ValueFor(1, param1Mode) * ValueFor(2, param2Mode));
                     cursor += 4;
                 }
                 else if (operationType == OperationType.Store)
                 {
-                    program[ValueFor(1, ValueMode.Immediate)] =  GetDirtyInput();
+                    Console.WriteLine($"Write to {IndexFor(1, param1Mode == ValueMode.Relative ? param1Mode : ValueMode.Immediate)} - relative base: {relativeBase}");
+                    Write(IndexFor(1, param1Mode),  GetDirtyInput());
                     cursor += 2;
                 }
                 else if (operationType == OperationType.Output)
                 {
-                    latestOutput = ValueFor(1, param1Mode);
+                    outputs.Add(ValueFor(1, param1Mode));
                     cursor += 2;
-                    return latestOutput;
+                    
+                    if (continuousOutput) return LatestOutput;
                 }
                 else if (operationType == OperationType.JumpIfTrue)
                 {
-                    cursor = ValueFor(1, param1Mode) != 0 ? ValueFor(2, param2Mode) : (cursor + 3);
+                    cursor = ValueFor(1,  param1Mode) != 0 ? ValueFor(2, param2Mode) : (cursor + 3);
                 }
                 else if (operationType == OperationType.JumpIfFalse)
                 {
@@ -75,17 +88,47 @@ namespace AdventOfCode2019
                 }
                 else if (operationType == OperationType.Less)
                 {
-                    program[ValueFor(3, ValueMode.Immediate)] = ValueFor(1, param1Mode) < ValueFor(2, param2Mode) ? 1 : 0;
+                    Write(IndexFor(3, param3Mode),  ValueFor(1, param1Mode) < ValueFor(2, param2Mode) ? 1 : 0);
                     cursor += 4;
                 }
                 else if (operationType == OperationType.Equals)
                 {
-                    program[ValueFor(3, ValueMode.Immediate)] = ValueFor(1, param1Mode) == ValueFor(2, param2Mode) ? 1 : 0;
+                    Write(IndexFor(3, param3Mode),  ValueFor(1, param1Mode) == ValueFor(2, param2Mode) ? 1 : 0);
                     cursor += 4;
+                }
+                else if (operationType == OperationType.AdjustRelativeOffset) {
+                    relativeBase += ValueFor(1, param1Mode);
+                    cursor += 2;
                 }
             }
 
-            return latestOutput;
+            return LatestOutput;
+        }
+
+        void Write(long index, long entry) {
+            if (IndexDoesntExist(index)) {
+                IncreaseMemoryFor(index);
+            }
+
+            program[index] = entry;
+        }
+
+        long Read(long index) {
+            if (IndexDoesntExist(index)) {
+                return 0;
+            }
+
+            return program[index];
+        }
+
+        bool IndexDoesntExist(long index) {
+            return index >= program.LongLength;
+        }
+
+        void IncreaseMemoryFor(long wishedIndex) {
+            long[] biggerProgram = new long[wishedIndex * 10];
+            program.CopyTo(biggerProgram, 0);
+            program = biggerProgram;
         }
 
         long GetDirtyInput()
@@ -95,13 +138,21 @@ namespace AdventOfCode2019
 
         long ValueFor(int relativePos, ValueMode mode)
         {
-            if (mode == ValueMode.Position)
+            return Read(IndexFor(relativePos, mode));
+        }
+
+        long IndexFor(int relativePos, ValueMode mode) {
+             if (mode == ValueMode.Position)
             {
-                return program[program[cursor + relativePos]];
+                return program[cursor + relativePos];
             }
             else if (mode == ValueMode.Immediate)
             {
-                return program[cursor + relativePos];
+                return cursor + relativePos;
+            }
+            else if (mode == ValueMode.Relative)
+            {
+                return relativeBase + program[cursor + relativePos];
             }
 
             throw new ArgumentException($"Why you do this? Mode: {mode}");
@@ -109,7 +160,8 @@ namespace AdventOfCode2019
 
         enum ValueMode {
             Position = 0,
-            Immediate = 1
+            Immediate = 1,
+            Relative = 2
         }
 
         enum OperationType {
@@ -121,6 +173,7 @@ namespace AdventOfCode2019
             JumpIfFalse = 6,
             Less = 7,
             Equals = 8,
+            AdjustRelativeOffset = 9,
             Halt = 99
         }
     }

@@ -10,7 +10,7 @@ namespace AdventOfCode2019
 
         public IntCodeAmplifier(int[] phaseSettings, long[] program)
         {
-            computers = phaseSettings.Select(setting => new IntCodeComputer(setting, program)).ToArray();
+            computers = phaseSettings.Select(setting => new IntCodeComputer(setting, program, true)).ToArray();
         }
 
         public long Run()

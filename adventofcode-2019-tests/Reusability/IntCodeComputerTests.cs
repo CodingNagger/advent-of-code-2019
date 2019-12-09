@@ -23,11 +23,24 @@ namespace AdventOfCode2019.Tests
         [InlineData(1000, 8,  new long[] { 3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99 })]
         [InlineData(1001, 9,  new long[] { 3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99 })]
         [InlineData(1001, int.MaxValue, new long[] { 3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99 })]
+        [InlineData(1125899906842624, 1, new long[] { 104,1125899906842624,99 })]
+        [InlineData(1219070632396864, 1, new long[] {1102,34915192,34915192,7,4,7,99,0})]
+        [InlineData(50, 1, new long[] {109,2000,109,19,1101, 20, 30, 1985, 204, -34, 99})]
 
         public void TestLatestOutputFromInput(long expectedResult, int phaseSetting, long[] program) {
             var computer = new IntCodeComputer(phaseSetting, program);
             computer.RunIntcodeProgram();
             Assert.Equal(expectedResult, computer.LatestOutput);
+        }
+
+        [Theory]
+        [InlineData("109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99", 1, new long[] {109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99})]
+        [InlineData("50", 1, new long[] {109,2000,109,19,1101, 20, 30, 1985, 204, -34, 99})]
+
+        public void TestStringOutput(string expectedResult, int phaseSetting, long[] program) {
+            var computer = new IntCodeComputer(phaseSetting, program);
+            computer.RunIntcodeProgram();
+            Assert.Equal(expectedResult, computer.StringOutput);
         }
 
         [Theory]
