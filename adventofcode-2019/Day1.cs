@@ -2,7 +2,7 @@ namespace AdventOfCode2019
 {
     class Day1 : Day
     {
-        public override string Compute(string[] input) {
+        public string Compute(string[] input) {
             int sum = 0;
 
             foreach (string moduleWeight in input) {

@@ -22,7 +22,7 @@ namespace AdventOfCode2019
 
         private int OrbitsCount;
 
-        public override string Compute(string[] input)
+        public string Compute(string[] input)
         {
             ParseOrbits(input);
             OrbitsCount = CountDirectOrbits(root)+CountIndirectOrbits(root, 0);

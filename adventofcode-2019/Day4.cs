@@ -5,7 +5,7 @@ namespace AdventOfCode2019
 {
     class Day4 : Day
     {
-        public override string Compute(string[] input)
+        public string Compute(string[] input)
         {
             int[] range = input[0].Split('-').Select(r => int.Parse(r)).ToArray();
             int validPasswordCounts = 0;

@@ -4,40 +4,87 @@ using System.Collections.Generic;
 
 namespace AdventOfCode2019
 {
-    public class Day10: Day
+    public class Day10: TwoPartDay
     {
-        const char Empty = '.';
         const char Asteroid = '#';
 
-        public override string Compute(string[] input)
+        public string Compute(string[] input)
         {
             var asteroidsCoordinates = ParseAsteroidsCoordinates(input);
+            var best = FindMonitoringStationLocationAndCounts(asteroidsCoordinates);
+
+            return $"{best.Item1.Description} - {best.Item2}";
+        }
+
+        public string ComputePartTwo(string[] input)
+        {
+            var asteroidsCoordinates = ParseAsteroidsCoordinates(input);
+            var monitoringStation = FindMonitoringStationLocationAndCounts(asteroidsCoordinates).Item1;
+            var processed = new List<Point>() { monitoringStation };
+            var shots = new List<Point>();
+            var targetCount = 200;
+
+            while (shots.Count < targetCount) {
+                var potentialShots = GetVisibleAsteroidsSorted(monitoringStation, asteroidsCoordinates.Except(processed));
+
+                foreach(var shot in potentialShots) {
+                    shots.Add(shot.Value);
+
+                    if (shots.Count == targetCount) break;
+                }
+
+                processed.AddRange(shots);
+            }
+
+            var targetShot = shots.Last();
+
+            return $"{100*targetShot.X + targetShot.Y}";
+        }
+
+        private (Point, int) FindMonitoringStationLocationAndCounts(Point[] asteroidsCoordinates)
+        {
             var best = asteroidsCoordinates.First();
             var bestCount = 0;
 
-            foreach (var p1 in asteroidsCoordinates) {
-                var angles = new List<double>();
-                foreach (var p2 in asteroidsCoordinates) {
-                    if (p1.Equals(p2)) continue;
-
-                    var angle = p1.Angle(p2);
-                    if (!angles.Contains(angle)) {
-                        angles.Add(angle);
-                    }
-                }
-
-                var count = angles.Count;
+            foreach (var source in asteroidsCoordinates) {
+                var count = GetVisibleAsteroids(source, asteroidsCoordinates).Keys.Count;
                 if (count >= bestCount) {
-                    Console.WriteLine($"New best {p1.Description} - {count}");
-                    best = p1;
-                    bestCount = angles.Count;
-                }
-                else {
-                    Console.WriteLine($"Nope {p1.Description} - {count}");
+                    best = source;
+                    bestCount = count;
                 }
             }
 
-            return $"{best.Description} - {bestCount}";
+            return (best, bestCount);
+        }
+
+        private Dictionary<double, Point> GetVisibleAsteroids(Point source, IEnumerable<Point> asteroids) {
+            var visibleAsteroids = new Dictionary<double, Point>();
+
+            foreach (var asteroid in asteroids.Except(new Point[] { source })) {
+                var angle = source.Angle(asteroid);
+                if (!visibleAsteroids.ContainsKey(angle)) {
+                    visibleAsteroids.Add(angle, asteroid);
+                }
+                else {
+                    var d1 = source.Distance(asteroid);
+                    var d2 = source.Distance(visibleAsteroids[angle]);
+
+                    if (d1 < d2) {
+                        visibleAsteroids[angle] = asteroid;
+                    }
+                }
+            }
+            return visibleAsteroids;
+        }
+
+        private Dictionary<double, Point> GetVisibleAsteroidsSorted(Point source, IEnumerable<Point> asteroids) {
+            return GetVisibleAsteroids(source, asteroids)
+            .Select(a => new {
+                    Point = a.Value,
+                    Score = a.Key > 0 ? a.Key : a.Key + 2 * Math.PI,
+                })
+                .OrderByDescending(a => a.Score)
+                .ToDictionary(a => a.Score, v => v.Point);
         }
 
         public Point[] ParseAsteroidsCoordinates(string[] input) {

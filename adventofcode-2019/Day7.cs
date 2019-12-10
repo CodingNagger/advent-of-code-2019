@@ -11,7 +11,7 @@ namespace AdventOfCode2019
 
         long maxOutput = 0;
 
-        public override string Compute(string[] input)
+        public string Compute(string[] input)
         {
             program = IntCodeProgramParser.Parse(input);
 

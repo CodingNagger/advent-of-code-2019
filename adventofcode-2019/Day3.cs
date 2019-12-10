@@ -12,7 +12,7 @@ namespace AdventOfCode2019
 
         private int minIntersectionSteps = 0;
 
-        public override string Compute(string[] input)
+        public string Compute(string[] input)
         {
             foreach (var cableDefinition in input)
             {

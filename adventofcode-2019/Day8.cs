@@ -6,7 +6,7 @@ namespace AdventOfCode2019
     public class Day8 : Day
     {
 
-        public override string Compute(string[] input)
+        public string Compute(string[] input)
         {
             var width = 25;
             var height = 6;

@@ -11,10 +11,9 @@ namespace AdventOfCode2019
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            Day day = new Day10();
-            var input = File.ReadAllLines("./input/day10.txt");
-            // var input = new string[] { "......#.#.","#..#.#....",".#######.",".#.#.###..",".#..#.....","..#....#.#","#..#....#.",".##.#..###","##...#..#.",".#....####" };
-            Console.WriteLine(day.Compute(input));
+            TwoPartDay day = new Day10();
+            var input = File.ReadAllLines("./input/day10.txt");       
+            Console.WriteLine(day.ComputePartTwo(input));
 
             stopWatch.Stop();
 

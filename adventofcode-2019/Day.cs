@@ -1,7 +1,11 @@
 namespace AdventOfCode2019
 {
-    public abstract class Day
+    public interface Day
     {
-        public abstract string Compute(string[] input);
+        string Compute(string[] input);
+    }
+
+    public interface TwoPartDay: Day {
+        string ComputePartTwo(string[] input);
     }
 }

@@ -6,7 +6,7 @@ namespace AdventOfCode2019
 {
     public class Day2 : Day
     {
-        public override string Compute(string[] input) {
+        public string Compute(string[] input) {
            long noun = 0, verb = 0;
            long expectedOutput = 19690720;
            long[] program = IntCodeProgramParser.Parse(input);
