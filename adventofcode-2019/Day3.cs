@@ -10,8 +10,6 @@ namespace AdventOfCode2019
 
         private List<Point> Intersections = new List<Point>();
 
-        private Point Origin = new Point { X = 0, Y = 0 };
-
         private int minIntersectionSteps = 0;
 
         public override string Compute(string[] input)
@@ -34,19 +32,14 @@ namespace AdventOfCode2019
             }
 
             Console.WriteLine($"Size: {Intersections.Count}");
-            var smallestDistance = distance(Origin, Intersections[0]);
+            var smallestDistance = Point.Origin.Distance(Intersections[0]);
 
             foreach (var point in Intersections)
             {
-                smallestDistance = Math.Min(smallestDistance, distance(Origin, point));
+                smallestDistance = Math.Min(smallestDistance, Point.Origin.Distance(point));
             }
 
             return $"Smallest distance: {smallestDistance} - Min steps: {minIntersectionSteps}";
-        }
-
-        private int distance(Point a, Point b)
-        {
-            return Math.Abs(a.X - b.X) + Math.Abs(a.Y - b.Y);
         }
 
         private Point[] FindIntersections(Cable a, Cable b)
@@ -65,10 +58,10 @@ namespace AdventOfCode2019
                 {
                     jSteps += b.Segments[j].Distance;
 
-                    var intersection = FindIntersection(a.Segments[i], b.Segments[j]);
-                    if (intersection != null && IsNotOrigin(intersection))
+                    var intersection = a.Segments[i].FindIntersection(b.Segments[j]);
+                    if (intersection != null && intersection.IsNotOrigin())
                     {
-                        var intersectionSteps = iSteps + jSteps - distance(intersection, a.Segments[i].End) - distance(intersection, b.Segments[j].End) ;
+                        var intersectionSteps = iSteps + jSteps - intersection.Distance(a.Segments[i].End) - intersection.Distance(b.Segments[j].End) ;
                         minIntersectionSteps = Math.Min(minIntersectionSteps, intersectionSteps);
                         Intersections.Add(intersection);
                         Console.WriteLine($"Found ({intersection.X}, {intersection.Y}) - {intersectionSteps}");
@@ -83,65 +76,11 @@ namespace AdventOfCode2019
             return a.Segments.Sum(v => v.Distance) + b.Segments.Sum(v => v.Distance);
         }
 
-        bool IsNotOrigin(Point point) {
-            return point.X != Origin.X || point.Y != Origin.Y;
-        }
-
-        private Point FindIntersection(Segment left, Segment right)
-        {
-            double deltaXReverseLeft = left.End.X - left.Start.X;
-            double deltaYReverseLeft = left.End.Y - left.Start.Y;
-            double deltaY1 = left.Start.Y - right.Start.Y;
-            double deltaX2 = right.End.X - right.Start.X;
-            double deltaX1 = left.Start.X - right.Start.X;
-            double deltaY2 = right.End.Y - right.Start.Y;
-
-            double denominator = deltaXReverseLeft * deltaY2 - deltaYReverseLeft * deltaX2;
-            double numerator = deltaY1 * deltaX2 - deltaX1 * deltaY2;
-
-            if (denominator == 0)
-            {
-                if (numerator == 0)
-                {
-                    if (left.Start.X >= right.Start.X && left.Start.X <= right.End.X)
-                    {
-                        return left.Start;
-                    }
-                    else if (right.Start.X >= left.Start.X && right.Start.X <= left.End.X)
-                    {
-                        return right.Start;
-                    }
-                    else
-                    {
-                        return null;
-                    }
-                }
-                else
-                {
-                    return null;
-                }
-            }
-
-            double r = numerator / denominator;
-            if (r < 0 || r > 1)
-            {
-                return null;
-            }
-
-            double s = (deltaY1 * deltaXReverseLeft - deltaX1 * deltaYReverseLeft) / denominator;
-            if (s < 0 || s > 1)
-            {
-                return null;
-            }
-
-            return new Point { X = (int) (left.Start.X + r * deltaXReverseLeft), Y = (int)( left.Start.Y + r * deltaYReverseLeft ) };
-        }
-
         private Cable CreateCable(string cableDefinition)
         {
             var movements = cableDefinition.Split(',');
             List<Segment> segments = new List<Segment>();
-            Point source = Origin;
+            Point source = Point.Origin;
             Point destination = source;
             char move;
             int shift;
@@ -180,21 +119,6 @@ namespace AdventOfCode2019
         class Cable
         {
             public Segment[] Segments { get; set; }
-        }
-
-        class Segment
-        {
-            public Point Start { get; set; }
-
-            public Point End { get; set; }
-
-            public int Distance { get; set; }
-        }
-
-        class Point
-        {
-            public int X { get; set; }
-            public int Y { get; set; }
         }
     }
 }
