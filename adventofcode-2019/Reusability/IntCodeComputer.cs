@@ -4,7 +4,24 @@ using System.Collections.Generic;
 
 namespace AdventOfCode2019
 {
-    public class IntCodeComputer
+    public interface IIntCodeComputer
+    {
+        public long? RunIntcodeProgram(long nextInput = 0);
+
+        public bool ShouldContinue { get; }
+
+        public string StringOutput { get; }
+
+        public long? LatestOutput { get; }
+    }
+
+    public interface IIntCodeComputerDelegate {
+        long GetInput();
+
+        void HandleOutput(long output);
+    }
+
+    public class IntCodeComputer : IIntCodeComputer
     {
         Queue<long> inputs;
 
@@ -13,6 +30,8 @@ namespace AdventOfCode2019
         long cursor;
         long relativeBase;
         bool continuousOutput;
+
+        IIntCodeComputerDelegate aDelegate;
 
         public long Noun { set { program[1] = value; } }
         public long Verb { set { program[2] = value; } }
@@ -44,9 +63,14 @@ namespace AdventOfCode2019
         {
         }
 
+        public void SetDelegate(IIntCodeComputerDelegate aDelegate) {
+            inputs.Clear();
+            this.aDelegate = aDelegate;
+        }
+
         public long? RunIntcodeProgram(long nextInput = 0)
         {
-            this.inputs.Enqueue(nextInput);
+            this.inputs.Enqueue(aDelegate?.GetInput() ?? nextInput);
 
             while (ShouldContinue)
             {
@@ -72,7 +96,10 @@ namespace AdventOfCode2019
                 }
                 else if (operationType == OperationType.Output)
                 {
-                    outputs.Add(ValueFor(1, param1Mode));
+                    var output = ValueFor(1, param1Mode);
+                    outputs.Add(output);
+                    aDelegate?.HandleOutput(output);
+
                     cursor += 2;
                     
                     if (continuousOutput) return LatestOutput;
@@ -132,7 +159,7 @@ namespace AdventOfCode2019
 
         long GetDirtyInput()
         {
-            return inputs.Dequeue();
+            return aDelegate?.GetInput() ?? inputs.Dequeue();
         }
 
         long ValueFor(int relativePos, ValueMode mode)
