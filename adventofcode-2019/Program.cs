@@ -11,8 +11,8 @@ namespace AdventOfCode2019
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            TwoPartDay day = new Day11();
-            var input = File.ReadAllLines("./input/day11.txt");       
+            TwoPartDay day = new Day12();
+            var input = File.ReadAllLines("./input/day12.txt");       
             Console.WriteLine(day.ComputePartTwo(input));
 
             stopWatch.Stop();
