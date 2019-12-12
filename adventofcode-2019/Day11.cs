@@ -13,6 +13,7 @@ namespace AdventOfCode2019
             var brain = new IntCodeComputer(IntCodeProgramParser.Parse(input));
             var robot = new Robot(brain, PanelColor.Black);
             brain.SetDelegate(robot);
+            brain.SetDatasource(robot);
             
             robot.Run();
             return $"{robot.UniquePanelsPaintedCount}";
@@ -23,6 +24,7 @@ namespace AdventOfCode2019
             var brain = new IntCodeComputer(IntCodeProgramParser.Parse(input));
             var robot = new Robot(brain, PanelColor.White);
             brain.SetDelegate(robot);
+            brain.SetDatasource(robot);
             
             robot.Run();
             return $"{robot.PaintIdentifier()}";

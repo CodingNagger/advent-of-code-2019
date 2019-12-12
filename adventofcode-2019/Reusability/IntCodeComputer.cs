@@ -15,9 +15,11 @@ namespace AdventOfCode2019
         public long? LatestOutput { get; }
     }
 
-    public interface IIntCodeComputerDelegate {
+    public interface IIntCodeComputerDatasource {
         long GetInput();
+    }
 
+    public interface IIntCodeComputerDelegate {
         void HandleOutput(long output);
     }
 
@@ -32,6 +34,7 @@ namespace AdventOfCode2019
         bool continuousOutput;
 
         IIntCodeComputerDelegate aDelegate;
+        IIntCodeComputerDatasource aDatasource;
 
         public long Noun { set { program[1] = value; } }
         public long Verb { set { program[2] = value; } }
@@ -63,14 +66,18 @@ namespace AdventOfCode2019
         {
         }
 
-        public void SetDelegate(IIntCodeComputerDelegate aDelegate) {
+        public void SetDatasource(IIntCodeComputerDatasource aDatasource) {
             inputs.Clear();
+            this.aDatasource = aDatasource;
+        }
+
+        public void SetDelegate(IIntCodeComputerDelegate aDelegate) {
             this.aDelegate = aDelegate;
         }
 
         public long? RunIntcodeProgram(long nextInput = 0)
         {
-            this.inputs.Enqueue(aDelegate?.GetInput() ?? nextInput);
+            this.inputs.Enqueue(aDatasource?.GetInput() ?? nextInput);
 
             while (ShouldContinue)
             {
@@ -159,7 +166,7 @@ namespace AdventOfCode2019
 
         long GetDirtyInput()
         {
-            return aDelegate?.GetInput() ?? inputs.Dequeue();
+            return aDatasource?.GetInput() ?? inputs.Dequeue();
         }
 
         long ValueFor(int relativePos, ValueMode mode)

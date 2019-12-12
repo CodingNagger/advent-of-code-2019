@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace AdventOfCode2019
 {
-    public class Robot : IIntCodeComputerDelegate
+    public class Robot : IIntCodeComputerDelegate, IIntCodeComputerDatasource
     {
         private IIntCodeComputer brain;
         private RobotDirection direction;
