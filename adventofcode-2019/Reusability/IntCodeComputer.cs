@@ -13,6 +13,8 @@ namespace AdventOfCode2019
         public string StringOutput { get; }
 
         public long? LatestOutput { get; }
+
+        void AddDelegate(IIntCodeComputerDelegate aDelegate);
     }
 
     public interface IIntCodeComputerDatasource {
@@ -89,17 +91,17 @@ namespace AdventOfCode2019
 
                 if (operationType == OperationType.Add)
                 {
-                    Write(IndexFor(3, param3Mode), ValueFor(1, param1Mode) + ValueFor(2, param2Mode));
+                    Write(IndexFor(3,  param3Mode == ValueMode.Immediate ? ValueMode.Position : param3Mode), ValueFor(1, param1Mode) + ValueFor(2, param2Mode));
                     cursor += 4;
                 }
                 else if (operationType ==  OperationType.Multiply)
                 {
-                    Write(IndexFor(3, param3Mode), ValueFor(1, param1Mode) * ValueFor(2, param2Mode));
+                    Write(IndexFor(3,  param3Mode == ValueMode.Immediate ? ValueMode.Position : param3Mode), ValueFor(1, param1Mode) * ValueFor(2, param2Mode));
                     cursor += 4;
                 }
                 else if (operationType == OperationType.Store)
                 {
-                    Write(IndexFor(1, param1Mode),  GetDirtyInput());
+                    Write(IndexFor(1,  param1Mode == ValueMode.Immediate ? ValueMode.Position : param1Mode),  GetDirtyInput());
                     cursor += 2;
                 }
                 else if (operationType == OperationType.Output)
@@ -122,12 +124,12 @@ namespace AdventOfCode2019
                 }
                 else if (operationType == OperationType.Less)
                 {
-                    Write(IndexFor(3, param3Mode),  ValueFor(1, param1Mode) < ValueFor(2, param2Mode) ? 1 : 0);
+                    Write(IndexFor(3, param3Mode == ValueMode.Immediate ? ValueMode.Position : param3Mode),  ValueFor(1, param1Mode) < ValueFor(2, param2Mode) ? 1 : 0);
                     cursor += 4;
                 }
                 else if (operationType == OperationType.Equals)
                 {
-                    Write(IndexFor(3, param3Mode),  ValueFor(1, param1Mode) == ValueFor(2, param2Mode) ? 1 : 0);
+                    Write(IndexFor(3, param3Mode == ValueMode.Immediate ? ValueMode.Position : param3Mode),  ValueFor(1, param1Mode) == ValueFor(2, param2Mode) ? 1 : 0);
                     cursor += 4;
                 }
                 else if (operationType == OperationType.AdjustRelativeOffset) {
@@ -176,7 +178,7 @@ namespace AdventOfCode2019
         }
 
         long IndexFor(int relativePos, ValueMode mode) {
-             if (mode == ValueMode.Position)
+            if (mode == ValueMode.Position)
             {
                 return program[cursor + relativePos];
             }
