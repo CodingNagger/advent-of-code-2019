@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace AdventOfCode2019
 {
@@ -17,11 +18,13 @@ namespace AdventOfCode2019
         void AddDelegate(IIntCodeComputerDelegate aDelegate);
     }
 
-    public interface IIntCodeComputerDatasource {
+    public interface IIntCodeComputerDatasource
+    {
         long GetInput();
     }
 
-    public interface IIntCodeComputerDelegate {
+    public interface IIntCodeComputerDelegate
+    {
         void HandleOutput(long output);
     }
 
@@ -34,13 +37,12 @@ namespace AdventOfCode2019
         long cursor;
         long relativeBase;
         bool continuousOutput;
-
         List<IIntCodeComputerDelegate> delegates;
         IIntCodeComputerDatasource datasource;
 
         public long Noun { set { program[1] = value; } }
         public long Verb { set { program[2] = value; } }
-        public bool ShouldContinue => (OperationType) program[cursor] != OperationType.Halt;
+        public bool ShouldContinue => (OperationType)program[cursor] != OperationType.Halt;
 
         public long FirstValue => program[0];
 
@@ -61,7 +63,7 @@ namespace AdventOfCode2019
             this.continuousOutput = continuousOutput;
         }
 
-        public IntCodeComputer(int phaseSetting, long[] program): this(phaseSetting, program, false)
+        public IntCodeComputer(int phaseSetting, long[] program) : this(phaseSetting, program, false)
         {
         }
 
@@ -69,12 +71,14 @@ namespace AdventOfCode2019
         {
         }
 
-        public void SetDatasource(IIntCodeComputerDatasource aDatasource) {
+        public void SetDatasource(IIntCodeComputerDatasource aDatasource)
+        {
             inputs.Clear();
             this.datasource = aDatasource;
         }
 
-        public void AddDelegate(IIntCodeComputerDelegate aDelegate) {
+        public void AddDelegate(IIntCodeComputerDelegate aDelegate)
+        {
             delegates.Add(aDelegate);
         }
 
@@ -84,39 +88,40 @@ namespace AdventOfCode2019
 
             while (ShouldContinue)
             {
-                var operationType = (OperationType) (program[cursor] % 100);
-                var param1Mode = (ValueMode) ((program[cursor] / 100) % 10);
-                var param2Mode = (ValueMode) ((program[cursor] / 1000) % 10);
-                var param3Mode = (ValueMode) ((program[cursor] / 10000) % 10);
+                var operationType = (OperationType)(program[cursor] % 100);
+                var param1Mode = (ValueMode)((program[cursor] / 100) % 10);
+                var param2Mode = (ValueMode)((program[cursor] / 1000) % 10);
+                var param3Mode = (ValueMode)((program[cursor] / 10000) % 10);
 
                 if (operationType == OperationType.Add)
                 {
-                    Write(IndexFor(3,  param3Mode == ValueMode.Immediate ? ValueMode.Position : param3Mode), ValueFor(1, param1Mode) + ValueFor(2, param2Mode));
+                    Write(IndexFor(3, param3Mode == ValueMode.Immediate ? ValueMode.Position : param3Mode), ValueFor(1, param1Mode) + ValueFor(2, param2Mode));
                     cursor += 4;
                 }
-                else if (operationType ==  OperationType.Multiply)
+                else if (operationType == OperationType.Multiply)
                 {
-                    Write(IndexFor(3,  param3Mode == ValueMode.Immediate ? ValueMode.Position : param3Mode), ValueFor(1, param1Mode) * ValueFor(2, param2Mode));
+                    Write(IndexFor(3, param3Mode == ValueMode.Immediate ? ValueMode.Position : param3Mode), ValueFor(1, param1Mode) * ValueFor(2, param2Mode));
                     cursor += 4;
                 }
                 else if (operationType == OperationType.Store)
                 {
-                    Write(IndexFor(1,  param1Mode == ValueMode.Immediate ? ValueMode.Position : param1Mode),  GetDirtyInput());
+                    Write(IndexFor(1, param1Mode == ValueMode.Immediate ? ValueMode.Position : param1Mode), GetDirtyInput());
                     cursor += 2;
                 }
                 else if (operationType == OperationType.Output)
                 {
+                    
                     var output = ValueFor(1, param1Mode);
-                    outputs.Add(output);
                     delegates.ForEach(d => d.HandleOutput(output));
+                    outputs.Add(output);
 
                     cursor += 2;
-                    
+
                     if (continuousOutput) return LatestOutput;
                 }
                 else if (operationType == OperationType.JumpIfTrue)
                 {
-                    cursor = ValueFor(1,  param1Mode) != 0 ? ValueFor(2, param2Mode) : (cursor + 3);
+                    cursor = ValueFor(1, param1Mode) != 0 ? ValueFor(2, param2Mode) : (cursor + 3);
                 }
                 else if (operationType == OperationType.JumpIfFalse)
                 {
@@ -124,15 +129,16 @@ namespace AdventOfCode2019
                 }
                 else if (operationType == OperationType.Less)
                 {
-                    Write(IndexFor(3, param3Mode == ValueMode.Immediate ? ValueMode.Position : param3Mode),  ValueFor(1, param1Mode) < ValueFor(2, param2Mode) ? 1 : 0);
+                    Write(IndexFor(3, param3Mode == ValueMode.Immediate ? ValueMode.Position : param3Mode), ValueFor(1, param1Mode) < ValueFor(2, param2Mode) ? 1 : 0);
                     cursor += 4;
                 }
                 else if (operationType == OperationType.Equals)
                 {
-                    Write(IndexFor(3, param3Mode == ValueMode.Immediate ? ValueMode.Position : param3Mode),  ValueFor(1, param1Mode) == ValueFor(2, param2Mode) ? 1 : 0);
+                    Write(IndexFor(3, param3Mode == ValueMode.Immediate ? ValueMode.Position : param3Mode), ValueFor(1, param1Mode) == ValueFor(2, param2Mode) ? 1 : 0);
                     cursor += 4;
                 }
-                else if (operationType == OperationType.AdjustRelativeOffset) {
+                else if (operationType == OperationType.AdjustRelativeOffset)
+                {
                     relativeBase += ValueFor(1, param1Mode);
                     cursor += 2;
                 }
@@ -141,27 +147,33 @@ namespace AdventOfCode2019
             return LatestOutput;
         }
 
-        void Write(long index, long entry) {
-            if (IndexDoesntExist(index)) {
+        void Write(long index, long entry)
+        {
+            if (IndexDoesntExist(index))
+            {
                 IncreaseMemoryFor(index);
             }
 
             program[index] = entry;
         }
 
-        long Read(long index) {
-            if (IndexDoesntExist(index)) {
+        long Read(long index)
+        {
+            if (IndexDoesntExist(index))
+            {
                 return 0;
             }
 
             return program[index];
         }
 
-        bool IndexDoesntExist(long index) {
+        bool IndexDoesntExist(long index)
+        {
             return index >= program.LongLength;
         }
 
-        void IncreaseMemoryFor(long wishedIndex) {
+        void IncreaseMemoryFor(long wishedIndex)
+        {
             long[] biggerProgram = new long[wishedIndex * 10];
             program.CopyTo(biggerProgram, 0);
             program = biggerProgram;
@@ -177,7 +189,8 @@ namespace AdventOfCode2019
             return Read(IndexFor(relativePos, mode));
         }
 
-        long IndexFor(int relativePos, ValueMode mode) {
+        long IndexFor(int relativePos, ValueMode mode)
+        {
             if (mode == ValueMode.Position)
             {
                 return program[cursor + relativePos];
@@ -194,13 +207,15 @@ namespace AdventOfCode2019
             throw new ArgumentException($"Why you do this? Mode: {mode}");
         }
 
-        enum ValueMode {
+        enum ValueMode
+        {
             Position = 0,
             Immediate = 1,
             Relative = 2
         }
 
-        enum OperationType {
+        enum OperationType
+        {
             Add = 1,
             Multiply = 2,
             Store = 3,

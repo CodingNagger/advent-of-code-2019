@@ -7,8 +7,6 @@ namespace AdventOfCode2019
     {
         const char Asteroid = '#';
 
-        string lastPrint = "";
-
         Robot robot;
 
         public string Compute(string[] input)

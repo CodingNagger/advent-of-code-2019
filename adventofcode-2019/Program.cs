@@ -12,8 +12,9 @@ namespace AdventOfCode2019
             stopWatch.Start();
 
             TwoPartDay day = new Day13();
-            var input = File.ReadAllLines("./input/day13.txt");       
-            Console.WriteLine(day.Compute(input));
+            var input = File.ReadAllLines("./input/day13.txt");     
+            // Console.WriteLine(day.Compute(input));  
+            Console.WriteLine(day.ComputePartTwo(input));
 
             stopWatch.Stop();
 
