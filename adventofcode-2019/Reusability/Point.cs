@@ -40,5 +40,7 @@ namespace AdventOfCode2019
         {
             return X + 13 * Y;
         }
+
+        public override string ToString() => Description;
     }
 }

@@ -75,27 +75,7 @@ namespace AdventOfCode2019
                 steps[2]++;
             }
 
-            return $"{LCM(steps[0], LCM(steps[1], steps[2]))}";
-        }
-
-
-        private long GCD(long a, long b)
-        {
-            a = Math.Abs(a);
-            b = Math.Abs(b);
-
-            for (; ; )
-            {
-                long remainder = a % b;
-                if (remainder == 0) return b;
-                a = b;
-                b = remainder;
-            };
-        }
-
-        private long LCM(long a, long b)
-        {
-            return a * b / GCD(a, b);
+            return $"{MathUtils.LCM(steps[0], MathUtils.LCM(steps[1], steps[2]))}";
         }
 
         public static Moon[] ApplyGravity(Moon[] moons)
