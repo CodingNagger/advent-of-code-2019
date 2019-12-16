@@ -8,41 +8,10 @@ namespace AdventOfCode2019
     {
         public string Compute(string[] input)
         {
-            var surplus = new ChemicalsStore();
             var reactions = input.Select(i => Reaction.Parse(surplus, i));
+            var needs = reactions.First(r => r.OutputName.Equals("FUEL")).Input.ToList();
 
-            var inputs = reactions.First(r => r.OutputName.Equals("FUEL")).Input.ToList();
-            var oreReactors = reactions.Where(r => r.Input.All(i => i.Name.Equals("ORE")));
-
-            while (!inputs.All(i => oreReactors.Any(r => r.OutputName.Equals(i.Name))))
-            {
-                Console.WriteLine($"Reducing: {string.Join(',', inputs.Select(ii => ii.ToString()))}");
-                inputs = Merge(inputs.Aggregate(new List<Chemical>(), (acc, chemical) =>
-                {
-                    var reaction = reactions.FirstOrDefault(r => r.CanReverseReact(chemical) && !r.Input.All(i => i.Name.Equals("ORE")));
-                    if (reaction != null)
-                    {
-                        acc.AddRange(reaction.ReverseReact(chemical));
-                    }
-                    else
-                    {
-                        acc.Add(chemical);
-                    }
-                    return acc;
-                }));
-
-                Console.WriteLine($"Post reduction: {string.Join(',', inputs.Select(ii => ii.ToString()))}");
-            }
-
-            // var finalReactionChemicals = new List<Chemical>();
-            // inputs.Select(i => oreReactors.First(r => r.CanReverseReact(i)).SoullessCopy.ReverseReact(i)).ToList().ForEach(a => finalReactionChemicals.AddRange(a));
-            // return $"{finalReactionChemicals.Sum(i => i.Quantity)}";
-
-            var total = 0;
-            foreach (var i in inputs) {
-                total += oreReactors.First(r => r.CanReverseReact(i)).SoullessCopy.ReverseReact(i)[0].Quantity;
-            }
-            return $"{total}";
+            while (needs.)
         }
 
         private List<Chemical> Merge(List<Chemical> inputs)
@@ -120,7 +89,7 @@ namespace AdventOfCode2019
 
         public Reaction SoullessCopy => new Reaction(new ChemicalsStore(), input, output);
 
-        public Reaction(ChemicalsStore surplus, Chemical[] input, Chemical output)
+        public Reaction(Chemical[] input, Chemical output)
         {
             this.surplus = surplus;
             this.input = input;
@@ -150,23 +119,14 @@ namespace AdventOfCode2019
         private int ConvertQuantity(Chemical chemical, Chemical i)
         {
             var wishedQuantity = (int) Math.Ceiling((double) chemical.Quantity *  i.Quantity/(double)output.Quantity);
-            var widthdrawnQuantity = surplus.Withdraw(i.Name, wishedQuantity);
+            var producedQuantity = 0;
 
-            var quantity = 0;
-            var quantityFactor = 0;
-            wishedQuantity -= widthdrawnQuantity;
-
-            while (wishedQuantity > quantity)
+            while (producedQuantity < wishedQuantity)
             {
-                quantity += i.Quantity;
-                quantityFactor += output.Quantity;
-            }
-            
-            if (quantity > wishedQuantity) {
-                surplus.Deposit(i.Name, quantity - wishedQuantity);
+                producedQuantity += i.Quantity;
             }
 
-            return quantity;
+            return producedQuantity;
         }
 
         public static Reaction Parse(ChemicalsStore surplus, string data)
