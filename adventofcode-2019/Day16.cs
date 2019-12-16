@@ -31,13 +31,15 @@ namespace AdventOfCode2019
             stopWatch = new Stopwatch();
             stopWatch.Start();
             
-            var inputList = RepeatInput(input[0], 2);
+            var inputList = RepeatInput(input[0], 10000);
             var offset = CalculateOffset(inputList);
+
+            inputList = inputList.Substring(offset);
 
             // return $"{offset} - length: {inputList.Length} - generatePattern substring: {string.Join("", GeneratePattern(inputList.Length, offset)).Substring(offset-8, 48)}";
             
             Console.WriteLine($"{DisplayUtils.DisplayValue(stopWatch)} - BeforeOutput");
-            var outputList = CalculateOutput(inputList);
+            var outputList = CalculateOutputPartTwo(inputList);
             Console.WriteLine($"{DisplayUtils.DisplayValue(stopWatch)} - Generated output");
             var phase = 1;
             
@@ -47,11 +49,11 @@ namespace AdventOfCode2019
             while (phase < 100) {
                 // Console.WriteLine($"{DisplayUtils.DisplayValue(stopWatch)} - Applied phase {phase} - {outputList.Substring(outputList.Length-20), 20}");
                 phase++;
-                outputList = CalculateOutput(outputList);
+                outputList = CalculateOutputPartTwo(outputList);
             }
-            Console.WriteLine($"{DisplayUtils.DisplayValue(stopWatch)} - Applied phase {phase} - {outputList.Substring(outputList.Length-20), 20}");
+            Console.WriteLine($"{DisplayUtils.DisplayValue(stopWatch)} - Applied phase {phase}");
 
-            return string.Join(string.Empty, outputList).Substring(0, 8);
+            return outputList.Substring(0, 8);
         }
 
         public string RepeatInput(string input, int repeatCount) {
@@ -85,6 +87,18 @@ namespace AdventOfCode2019
             return string.Join("", outputList);
         }
 
+        public string CalculateOutputPartTwo(string inputList) {
+            var processableInput = InputListToIntArray(inputList).Reverse().ToArray();
+            var outputList = new int[processableInput.Length];
+            
+            outputList[0] = processableInput[0] % 10;
+
+            for (var i = 1; i < outputList.Length; i++) {
+                outputList[i] = (outputList[i-1] + processableInput[i]) % 10;
+            }
+
+            return string.Join("",outputList.Reverse());
+        }
         public int[] GeneratePattern(int size, int index) {
             var pattern = new int[size+1];
             var cursor = 0;
