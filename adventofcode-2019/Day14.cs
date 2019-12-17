@@ -8,10 +8,31 @@ namespace AdventOfCode2019
     {
         public string Compute(string[] input)
         {
+            var surplus = new ChemicalsStore();
             var reactions = input.Select(i => Reaction.Parse(surplus, i));
+            var oreReactions = reactions.Where(r => r.Input.All(i => i.Name.Equals("ORE")));
+            var nonOreReactions = reactions.Except(oreReactions);
             var needs = reactions.First(r => r.OutputName.Equals("FUEL")).Input.ToList();
 
-            while (needs.)
+            while (needs.Any(n => nonOreReactions.Any(r => r.CanReverseReact(n)))) {
+                var needsToRemove = new List<Chemical>();
+                var needsToAdd = new List<Chemical>();
+
+                foreach (var product in needs) {
+                    var reaction = nonOreReactions.FirstOrDefault(r => r.CanReverseReact(product));
+                    if (reaction != null) {
+                        needsToAdd.AddRange(reaction.ReverseReact(product));
+                        needsToRemove.Add(product);
+                    }
+                }
+
+                needsToRemove.ForEach(n => needs.Remove(n));
+                needs.AddRange(needsToAdd);
+            }
+
+
+
+            return $"{needs.Sum(n => n.Quantity)}";
         }
 
         private List<Chemical> Merge(List<Chemical> inputs)
@@ -77,6 +98,8 @@ namespace AdventOfCode2019
 
             return 0;
         }
+
+        public int Available(string name) => chemicals.ContainsKey(name) ? chemicals[name] : 0;
     }
 
     public class Reaction
@@ -86,10 +109,7 @@ namespace AdventOfCode2019
         public ChemicalsStore surplus;
         private Chemical[] input;
         private Chemical output;
-
-        public Reaction SoullessCopy => new Reaction(new ChemicalsStore(), input, output);
-
-        public Reaction(Chemical[] input, Chemical output)
+        public Reaction(ChemicalsStore surplus, Chemical[] input, Chemical output)
         {
             this.surplus = surplus;
             this.input = input;
@@ -109,7 +129,6 @@ namespace AdventOfCode2019
                 foreach (var i in input) {
                     result.Add( new Chemical { Name = i.Name, Quantity = ConvertQuantity(chemical, i) } );
                 }
-                Console.WriteLine($"Reverse reaction from {chemical} to {string.Join("; ", result)}");
                 return result.ToArray();
             }
 
@@ -120,11 +139,30 @@ namespace AdventOfCode2019
         {
             var wishedQuantity = (int) Math.Ceiling((double) chemical.Quantity *  i.Quantity/(double)output.Quantity);
             var producedQuantity = 0;
+            var quantityUsed = 0;
+
+            if (surplus.Available(chemical.Name) > 0) {
+                var withdrawnQuantity = surplus.Withdraw(chemical.Name, chemical.Quantity);
+                Console.WriteLine($"Loaded {withdrawnQuantity}/{chemical.Quantity} {chemical.Name} to produce {wishedQuantity} {i.Name}");
+                wishedQuantity -= withdrawnQuantity;
+            }
+
+            if (wishedQuantity == 0) {
+                return 0;
+            }
 
             while (producedQuantity < wishedQuantity)
             {
                 producedQuantity += i.Quantity;
+                quantityUsed += output.Quantity;
             }
+
+            if (chemical.Quantity < quantityUsed) {
+                surplus.Deposit(output.Name, quantityUsed-chemical.Quantity);
+                Console.WriteLine($"Storing {quantityUsed-chemical.Quantity} {output.Name}");
+            }
+
+            Console.WriteLine($"Used {quantityUsed} {chemical.Name} to produce {producedQuantity}/{wishedQuantity} {i.Name}");
 
             return producedQuantity;
         }
