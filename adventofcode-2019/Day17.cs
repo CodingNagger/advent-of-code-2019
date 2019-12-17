@@ -18,10 +18,43 @@ namespace AdventOfCode2019
         {
             var program = IntCodeProgramParser.Parse(input);
             program[0] = 2;
-            var robot = new ScaffoldRobot(new IntCodeComputer(program));
-            robot.Run();
-            return $"{robot.AlignmentParamsSum}";
+            var computer = new IntCodeComputer(program);
+            var inputer = new Inputer(computer);
+            computer.SetDatasource(inputer);
+            inputer.Run();
+            return $"{inputer.Output}";
         }
+    }
+
+    public class Inputer: IIntCodeComputerDatasource, IIntCodeComputerDelegate {
+        private long[] instructions;
+        private int cursor;
+        private IIntCodeComputer brain;
+
+        private long lastOutput;
+
+        public Inputer(IIntCodeComputer brain) {
+            this.brain = brain;
+            brain.AddDelegate(this);
+            instructions = " A,B,B,C,A,B,C,A,B,C\nL,6,R,12,L,4,L,6\nR,6,L,6,R,12\nL,6,L,10,L,10,R,6\nn\n".ToCharArray().Select(c => (long) c).ToArray();
+            cursor = 0;
+        }
+
+        public void Run() {
+            brain.RunIntcodeProgram();
+        }
+        
+        public long GetInput() {
+            var next = instructions[cursor];
+            cursor++;
+            return next;
+        }
+
+        public void HandleOutput(long output) {
+            lastOutput = output;
+        }
+
+        public long Output => lastOutput;
     }
 
     public class ScaffoldRobot : IIntCodeComputerDelegate
@@ -30,8 +63,6 @@ namespace AdventOfCode2019
         private int row;
         private int column;
         private Dictionary<Point, char> map;
-        private string optimalPath;
-        private long lastOutput;
 
         public int AlignmentParamsSum => map.Where(m => m.Value == '#').Where(m => IsIntersection(m.Key)).Select(p => p.Key.X * p.Key.Y).Sum();
 
@@ -40,13 +71,11 @@ namespace AdventOfCode2019
             this.brain = brain;
             brain.AddDelegate(this);
             map = new Dictionary<Point, char>();
-            lastOutput = -1;
         }
 
         public void HandleOutput(long output)
         {
-            var c = (char)output;
-            Console.Write(c);
+            var c = (char) (int) output;
 
             var currentPoint = new Point { X = column, Y = row };
 
@@ -77,12 +106,6 @@ namespace AdventOfCode2019
         public void Run()
         {
             brain.RunIntcodeProgram();
-        }
-
-        public string FindOptimalPath() {
-            var path = new List<char>();
-
-            return string.Join(',', path);
         }
     }
 }
