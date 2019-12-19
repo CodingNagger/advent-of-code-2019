@@ -2,7 +2,7 @@
 
 namespace AdventOfCode2019.Tests
 {
-    public class Day14Tests : AbstractTwoPartDayTests
+    public class Day14Tests : AbstractDayTests
     {
         [Theory]
         [InlineData("10", new string[] { "10 ORE => 1 A", "1 A => 1 FUEL" })]
@@ -22,9 +22,5 @@ namespace AdventOfCode2019.Tests
         "1 MZWV, 17 XDBXC, 3 XCVML => 2 XMNCP", "12 VRPVC, 27 CNZTR => 2 XDBXC", "15 KTJDG, 12 BHXH => 5 XCVML", "3 BHXH, 2 VRPVC => 7 MZWV", "121 ORE => 7 VRPVC", 
         "7 XCVML => 6 RJRHP", "5 BHXH, 4 VRPVC => 5 LTCX"})]
         public override void Test(string expectedResult, string[] input) => Execute(new Day14(), expectedResult, input);
-
-        [Theory]
-        [InlineData("nope", new string[] { "10 ORE => 10 A", "10 ORE => 10 A", "10 ORE => 10 A", "10 ORE => 10 A", "10 ORE => 10 A" })]
-        public override void TestPartTwo(string expectedResult, string[] input) => ExecutePartTwo(new Day14(), expectedResult, input);
     }
 }

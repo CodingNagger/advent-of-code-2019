@@ -25,6 +25,15 @@ namespace AdventOfCode2019
             return Math.Atan2(X - other.X, Y - other.Y);
         }
 
+        public Point[] GetHorizontalNeighbours() {
+            return new[] {
+                new Point { X = X+1, Y = Y},
+                new Point { X = X-1, Y = Y},
+                new Point { X = X, Y = Y+1},
+                new Point { X = X, Y = Y-1},
+            };
+        }
+
         public override bool Equals(object obj)
         {
             if (obj == null || GetType() != obj.GetType())
