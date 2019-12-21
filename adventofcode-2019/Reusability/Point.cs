@@ -4,10 +4,18 @@ namespace AdventOfCode2019
 {
     public class Point
     {
-        public static readonly Point Origin = new Point { X = 0, Y = 0 };
+        public static readonly Point Origin = new Point(0,0);
 
         public int X { get; set; }
         public int Y { get; set; }
+
+        public Point(int x, int y) {
+            X = x;
+            Y = y;
+        }
+
+        public Point() {
+        }
 
         public string Description => $"{X},{Y}";
 
@@ -36,7 +44,7 @@ namespace AdventOfCode2019
 
         public override bool Equals(object obj)
         {
-            if (obj == null || GetType() != obj.GetType())
+            if (obj == null || !(obj is Point))
             {
                 return false;
             }

@@ -8,148 +8,188 @@ namespace AdventOfCode2019
     public class Day18 : TwoPartDay
     {
         const char EMPTY = '.';
-        char[] keysToFind;
-        Random random = new Random();
-        Dictionary<string, Dictionary<Point, (char, int)>> cachedKeysDistances;
-        Dictionary<string, int> distances;
-
-        Dictionary<string, PathNode> cachedNodes;
+        private Dictionary<Point, char> map;
 
         public string Compute(string[] input)
         {
-            cachedKeysDistances = new Dictionary<string, Dictionary<Point, (char, int)>>();
-            cachedNodes = new Dictionary<string, PathNode>();
+            map = CreatePoints(input);
+            var start = map.First(p => p.Value == '@').Key;
 
-            var points = CreatePoints(input);
-            var start = points.First(p => p.Value == '@');
-            keysToFind = points.Where(p => IsKey(p.Value)).Select(p => p.Value).ToArray();
-            var tree = BuildTree((start.Key, start.Value), points, new List<char>(), 0);
-
-            // return $"{tree.Tile} - {tree.Children.Count} - {BestDistance(tree, keysToFind.Length, new List<char>(), 0)}";
-            return $"{BestDistance(tree, keysToFind.Length, new List<char>(), 0)}";
-            return "Zbreh";
+            return $"{BestDistance(start, GetKeysPositions(), new Dictionary<string, int>())}";
         }
 
-        public int? BestDistance(PathNode tree, int totalKeysCount, List<char> collectedKeys, int depth) {
-            var newlyCollectedKeys = new List<char>(collectedKeys);
+        private Point[] GetKeysPositions() => map.Where(p => IsKey(p.Key)).Select(p => p.Key).ToArray();
 
-            newlyCollectedKeys.Add(tree.Tile);
-            
-            var valuedChildren = tree.Children.Select(c => BestDistance(c, totalKeysCount, newlyCollectedKeys, depth+1)).Where(c => c.HasValue).ToArray();
-
-            var value = valuedChildren.Length > 0 ? valuedChildren.Min() : tree.Distance;
-
-            return value;
-        }
-
-
-        private PathNode BuildTree((Point Key, char Value) current, Dictionary<Point, char> points, List<char> collectedKeys, int distance)
+        public int BestDistance(Point start, Point[] keysLeft, Dictionary<string, int> cache)
         {
-            Console.WriteLine($"Enter BuildTree {current.Value} - {current.Key} - {distance}");
-            var mappingKey = GetNodeMappingKey(current.Key, points, distance);
-
-            if (collectedKeys.Contains(current.Value)) {
-                return null;
+            Console.WriteLine($"ENTER Best distance from {start} - {map[start]}");
+            var path = $"{map[start]}";
+            
+            if (keysLeft.Length == 0)
+            {
+                // Console.WriteLine($"NOKEYS Best distance from {start}");
+                return 0;
             }
 
-            if (cachedNodes.ContainsKey(mappingKey)) {
-                return cachedNodes[mappingKey];
+            var cachingKey = GenerateCachingKey(start, keysLeft);
+            if (cache.ContainsKey(cachingKey))
+            {
+                Console.WriteLine($"CACHED Best Distance update from {start} - {cache[cachingKey]}");
+                return cache[cachingKey];
             }
-            else if (points.Count(p => IsKey(p.Value)) > 0) {
-                var node = new PathNode(current.Value, distance);
-                var newlyCollectedKeys = new List<char>(collectedKeys);
-                
-                if (IsKey(current.Value)) {
-                    newlyCollectedKeys.Add(current.Value);
+
+            var bestDistance = int.MaxValue;
+            char bestDistanceChar = '0';
+
+            foreach (var key in DirectlyReachableKeys(start, keysLeft, new Point[0], new Dictionary<string, IEnumerable<Point>>()))
+            {
+                Console.WriteLine($"Dealing with key {key} - {map[key]} from {map[start]}");
+                var distanceToKey = Distance(start, key, keysLeft);
+
+                if (distanceToKey.HasValue) {
+                    var distanceKeyToEnd = BestDistance(key, keysLeft.Except(new[] { key }).ToArray(), cache);
+
+                    Console.WriteLine($"Distance update with key {key} - {map[key]} from {map[start]} - {bestDistance} - {distanceToKey.Value} - {distanceKeyToEnd} - {distanceKeyToEnd+distanceKeyToEnd}");
+                    bestDistance = Math.Min(bestDistance, distanceToKey.Value + distanceKeyToEnd);
+                    bestDistanceChar = map[key];
+                    Console.WriteLine($"Distance update with key {key} - {map[key]} from {map[start]} - {bestDistance} - {distanceToKey.Value} - {distanceKeyToEnd} - {distanceKeyToEnd+distanceKeyToEnd}");
+                }
+                else {
+                    Console.WriteLine($"Not Distance update between {map[start]} and {bestDistanceChar}");
+                }
+            }
+
+            cache.Add(cachingKey, bestDistance);
+            Console.WriteLine($"EXIT Best Distance update from {start} - {map[start]} - {bestDistance} - path: {map[start]}{bestDistanceChar}");
+            return bestDistance;
+        }
+
+        private int? Distance(Point s, Point t, Point[] keysLeft)
+        {
+            Console.WriteLine($"ENTER Calculate distance from {s} to {t}");
+            AStarPoint current = null;
+            var start = new AStarPoint(s);
+            var target = new AStarPoint(t);
+            var visitable = new List<AStarPoint>();
+            var visited = new List<AStarPoint>();
+            int g = 0;
+
+            visitable.Add(start);
+
+            while (visitable.Count > 0)
+            {
+                // Console.WriteLine($"LOOPCURRENT {g} Calculate distance from {s} to {t} - {current}");
+                var lowestF = visitable.Min(v => v.F);
+                current = visitable.First(v => v.F == lowestF);
+
+
+                visited.Add(current);
+                // Console.WriteLine($"VISITEDCURRENT {g} Calculate distance from {s} to {t} - {current} - {string.Join(';', visitable)}");
+                visitable.Remove(current);
+                // Console.WriteLine($"NOMOREVISIT {g} Calculate distance from {s} to {t} - {current} - {string.Join(';', visited)}");
+
+                if (visited.FirstOrDefault(v => target.Equals(v)) != null)
+                {
+                    // Console.WriteLine($"BREAK {g} - {visited.FirstOrDefault(v => v.Equals(target))?.G} Calculate distance from {s} to {t} - {current} - {string.Join(';', visited)}");
+                    break;
                 }
 
-                Dictionary<Point, char> visitablePoints = IsKey(current.Value) ?
-                    RemoveKeyAndDoor(points, current.Value) :
-                    RemovePoint(points, current.Key);
-
-                var accessibleKeys = current.Key.GetHorizontalNeighbours()
-                    .Where(n => visitablePoints.ContainsKey(n) && CanNavigate(visitablePoints[n], visitablePoints))
+                var explorableNeighbours = GetExplorableNeighbours(current, keysLeft, visited)
+                    .Select(n => new AStarPoint(n))
                     .ToArray();
 
-                foreach (var neighbour in accessibleKeys) {
-                    var neighbourResult = GetAccessibleKeysAndDistances((neighbour, points[neighbour]), visitablePoints, new List<Point> { current.Key }, distance);
+                // Console.WriteLine($"NEIGHBOURS {g} Calculate distance from {s} to {t} - {current} - {string.Join(';', explorableNeighbours.ToList())}");
 
-                    foreach (var keyFound in neighbourResult) {
-                        var child = BuildTree((keyFound.Key, keyFound.Value.Item1), visitablePoints, newlyCollectedKeys, keyFound.Value.Item2);
+                g++;
 
-                        node.AddChild(child);
+                foreach (var neighbour in explorableNeighbours)
+                {
+                    // Console.WriteLine($"LOOPNEIGHBOUR {g} Calculate distance from {s} to {t} - {current} - {neighbour}");
+                    if (visitable.Contains(neighbour))
+                    {
+                        if (g + neighbour.H < neighbour.F)
+                        {
+                            neighbour.G = g;
+                            neighbour.Parent = current;
+                        }
+                    }
+                    else
+                    {
+                        neighbour.G = g;
+                        neighbour.H = Math.Abs(target.X - neighbour.X) + Math.Abs(target.Y - neighbour.Y);
+                        visitable.Add(neighbour);
+                        // Console.WriteLine($"ADDVISITABLE {g} Calculate distance from {s} to {t} - {current} - {neighbour}");
                     }
                 }
-
-                Console.WriteLine($"Exit BuildTree {current.Value} - {current.Key} - {distance} - Children: {string.Join(",", node.Children.Select(c => c.Tile))}-");
-
-                cachedNodes.Add(mappingKey, node);
-
-                return node;
             }
 
-            return null;
+            // Console.WriteLine($"EXIT {g} Calculate distance from {s} to {t} - {current} - {visited.FirstOrDefault(v => v.Equals(target))?.G}");
+
+            return visited.FirstOrDefault(v => v.Equals(target))?.G;
         }
 
-        private Dictionary<Point, (char, int)> GetAccessibleKeysAndDistances((Point Key, char Value) current, Dictionary<Point, char> points,
-            List<Point> visitedPoints, int distance)
+        private IEnumerable<Point> GetExplorableNeighbours(Point current, Point[] keysLeft, IEnumerable<Point> visited)
         {
-            Console.WriteLine($"Enter GetAccessibleKeysAndDistances {current.Value} - {current.Key} - {distance} - Visited: {string.Join(';', visitedPoints)}");
-            distance++;
-            Dictionary<Point, char> visitablePoints;
-            var result = new Dictionary<Point, (char, int)>();
-            var newlyVisitedPoints = new List<Point>(visitedPoints);
-            newlyVisitedPoints.Add(current.Key);
+            return current.GetHorizontalNeighbours().Where(n => CanNavigate(n, keysLeft) && !visited.Contains(n));
+        }
 
-            var mappingKey = GetMappingKey(newlyVisitedPoints, points, distance);
+        private IEnumerable<Point> DirectlyReachableKeys(Point start, Point[] keysLeft, IEnumerable<Point> visitedPoints, Dictionary<string, IEnumerable<Point>> cache)
+        {
+            if (IsKey(start)) Console.WriteLine($"Enter DirectlyReachableKeys {start} {map[start]}  - Keys left: {string.Join(';', keysLeft.Select(k => map[k])) } - Visited:  {string.Join(';', visitedPoints.Select(k => k))}");
 
-            if (cachedKeysDistances.ContainsKey(mappingKey)) {
-                return cachedKeysDistances[mappingKey];
-            }
-            else if (CanNavigate(current.Value, points))
+            var cachingKey = GenerateCachingKey(start, keysLeft);
+
+            if (cache.ContainsKey(cachingKey))
             {
-                if (IsKey(current.Value))
+                if (IsKey(start)) Console.WriteLine($"Returning cached value for {cachingKey}");
+                return cache[cachingKey];
+            }
+
+            var result = new List<Point>();
+            var visited = new List<Point>(visitedPoints);
+
+            if (CanNavigate(start, keysLeft))
+            {
+                if (IsKey(start) && keysLeft.Contains(start))
                 {
-                    result.Add(current.Key, (current.Value, distance));
-                    visitablePoints = RemovePoint(points, current.Key);
-                    Console.WriteLine($"Distance: {distance} -  Added {current.Value} because it's a key");
+                    Console.WriteLine($"DirectlyReachableKeys found key {start}");
+                    result.Add(start);
                 }
                 else
                 {
-                    visitablePoints = RemovePoint(points, current.Key);
-                }
+                    visited.Add(start);
 
-                Console.WriteLine($"Neighbours search");
-                var neighborsResults = current.Key.GetHorizontalNeighbours()
-                .Where(n => visitablePoints.ContainsKey(n) && !newlyVisitedPoints.Contains(n) && CanNavigate(visitablePoints[n], visitablePoints))
-                .SelectMany(n => GetAccessibleKeysAndDistances((n, visitablePoints[n]), visitablePoints, newlyVisitedPoints, distance));
+                    var neighbourResults = GetExplorableNeighbours(start, keysLeft, visited).SelectMany(n => DirectlyReachableKeys(n, keysLeft, visited, cache));
 
-                foreach (var nResult in neighborsResults)
-                {
-                    if (nResult.Value.Item1 == current.Value) {
-                        throw new Exception($"NEIN NEIN NEIN not happening trying should not have {current.Value} twice {distance} appeared at {mappingKey} - parent");
+                    if (IsKey(start)) {
+                        Console.WriteLine($"Neighbours candidates from {map[start]} {start}: {string.Join(";", start.GetHorizontalNeighbours().ToList())}");
+                        Console.WriteLine($"Neighbours returned from {map[start]} {start}: {string.Join(";", neighbourResults)}");
                     }
-                    if (!result.ContainsKey(nResult.Key))
+                    foreach (var neighbourResult in neighbourResults)
                     {
-                        result.Add(nResult.Key, nResult.Value);
+                        if (!result.Contains(neighbourResult))
+                        {
+                            if (IsKey(start)) Console.WriteLine($"Add neighbour {neighbourResult}-{map[neighbourResult]} from {start}-{map[start]}");
+                            result.Add(neighbourResult);
+                        }
+                        else {
+                            if (IsKey(start)) Console.WriteLine($"Already have neighbour {neighbourResult}-{map[neighbourResult]} from {start}-{map[start]}");
+                        }
                     }
                 }
-
-                cachedKeysDistances.Add(mappingKey, result);
-            }
-            else
-            {
-                Console.WriteLine($"Cannot navigate {current.Key} - {current.Value}");
             }
 
-            Console.WriteLine($"Exit GetAccessibleKeysAndDistances {current.Value} - {current.Key} - {distance}");
+            cache.Add(cachingKey, result);
+
+            if (IsKey(start)) Console.WriteLine($"Exit DirectlyReachableKeys {start} {map[start]}  - Returning: {string.Join(';', result.Select(k => map[k])) }");
 
             return result;
         }
 
-        private string GetNodeMappingKey(Point point, Dictionary<Point, char> points, int distance) => 
-            $"{distance}-{point}-{string.Join(';', points.Select(p => p.Key).OrderBy(p => p.X).OrderBy(p => p.Y))}";
-        private string GetMappingKey(List<Point> visitedPoints, Dictionary<Point, char> points, int distance) => $"{distance}-{string.Join(';', visitedPoints)}-{string.Join(';', points.Select(p => p.Key))}";
+        private string GenerateCachingKey(Point start, Point[] keys)
+        {
+            return $"{start}-{string.Join(';', keys.ToList())}";
+        }
 
         public string ComputePartTwo(string[] input)
         {
@@ -158,42 +198,24 @@ namespace AdventOfCode2019
 
         private char GetDoorForKey(char key) => ((char)((int)key - 32));
 
-        private Dictionary<Point, char> RemoveKeyAndDoor(Dictionary<Point, char> points, char key)
+        private List<Point> RemoveKeyAndDoor(IEnumerable<Point> points, Point key)
         {
-            Console.WriteLine($"Attempt to remove key {key} - keys: {string.Join(" ; ", points.Where(p => IsKey(p.Value) || IsDoor(p.Value)).Select(p => p.Value).ToArray())}");
-            var door = GetDoorForKey(key);
+            var doorKey = GetDoorForKey(map[key]);
+            var result = RemovePoint(points, key);
 
-            return points.Aggregate(new Dictionary<Point, char>(), (result, next) =>
+            var door = map.FirstOrDefault(m => m.Value == doorKey).Key;
+
+            if (door != null)
             {
-                if (next.Value == key || next.Value == door)
-                {
-                    Console.WriteLine($"Removed key or door {next.Value} at {next.Key}");
-                    result.Add(next.Key, EMPTY);
-                }
-                else
-                {
-                    result.Add(next.Key, next.Value);
-                }
+                result = RemovePoint(points, door);
+            }
 
-                return result;
-            });
+            return result;
         }
 
-        private Dictionary<Point, char> RemovePoint(Dictionary<Point, char> points, Point point)
+        private List<Point> RemovePoint(IEnumerable<Point> points, Point point)
         {
-            return points.Aggregate(new Dictionary<Point, char>(), (result, next) =>
-            {
-                if (next.Key.Equals(point))
-                {
-                    result.Add(next.Key, EMPTY);
-                }
-                else
-                {
-                    result.Add(next.Key, next.Value);
-                }
-
-                return result;
-            });
+            return points.Except(new[] { point }).ToList();
         }
 
         private Dictionary<Point, char> CreatePoints(string[] input)
@@ -212,78 +234,27 @@ namespace AdventOfCode2019
             return points;
         }
 
-        private bool CanNavigate(char c, Dictionary<Point, char> points) => points.Any(p => p.Value == c) && !IsWall(c) && !IsDoor(c);
-        private bool IsEmpty(char c) => c == '.' || IsStart(c);
+        private bool CanNavigate(Point current, Point[] keysLeft) => map.ContainsKey(current) && !DoorsLeft(keysLeft).Contains(current) && !IsWall(map[current]);
         private bool IsStart(char c) => c == '@';
         private bool IsWall(char c) => c == '#';
 
-        private bool IsKey(char c) => c >= 'a' && c <= 'z';
+        private bool IsKey(Point current) => map.ContainsKey(current) && map[current] >= 'a' && map[current] <= 'z';
 
         private bool IsDoor(char c) => c >= 'A' && c <= 'Z';
 
-        private bool IsKeyForDoor(char key, char door) => 'z' - key == 'Z' - door;
+        private bool IsValidKeyDoorPair(char key, char door) => 'z' - key == 'Z' - door;
+
+        private Point[] DoorsLeft(Point[] keysLeft) => map.Where(p => IsDoor(p.Value) && keysLeft.Any(k => IsValidKeyDoorPair(map[k], p.Value))).Select(p => p.Key).ToArray();
     }
 
-    public class PathNode
+    public class AStarPoint : Point
     {
-        char tile;
-        int distance;
+        public int F => G + H;
+        public int G { get; set; }
+        public int H { get; set; }
 
-        public List<PathNode> Children { get; private set; }
-        public char Tile => tile;
-        public int Distance => distance;
+        public AStarPoint Parent { get; set; }
 
-        public PathNode(char tile, int distance)
-        {
-            this.tile = tile;
-            this.distance = distance;
-            this.Children = new List<PathNode>();
-        }
-
-        public void AddChild(PathNode child)
-        {
-            if (child == null)
-            {
-                return;
-            }
-
-            if (child.Tile == Tile) {
-                throw new Exception("You can't be your own child little inbred");
-            }
-
-            var competingChild = Children.FirstOrDefault(c => c.Tile == child.Tile);
-
-            if (competingChild != null) {
-                if (competingChild.Distance > child.Distance) {
-                    Children.Remove(competingChild);
-                }
-                
-                Children.Add(child);
-            }
-            else { 
-                Children.Add(child);
-            }
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj == null || GetType() != obj.GetType())
-            {
-                return false;
-            }
-            
-            var other = obj as PathNode;
-
-            return Tile.Equals(other.Tile) && Distance == other.Distance &&
-                Children.Select(c => c.Tile).Except(other.Children.Select(c => c.Tile)).Count() > 0;
-        }
-        
-        // override object.GetHashCode
-        public override int GetHashCode()
-        {
-            // TODO: write your implementation of GetHashCode() here
-            throw new System.NotImplementedException();
-            return base.GetHashCode();
-        }
+        public AStarPoint(Point point) : base(point.X, point.Y) { }
     }
 }
